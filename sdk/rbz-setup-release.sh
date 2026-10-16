@@ -191,6 +191,20 @@ echo "" >> $BUILD_DIR/conf/bblayers.conf
 echo "# RBZ layer" >> $BUILD_DIR/conf/bblayers.conf
 echo "BBLAYERS += \"\${BSPDIR}/sources/meta-rbz\"" >> $BUILD_DIR/conf/bblayers.conf
 
+# Optional ML Python layers (manifest *-rbz-ml-python.xml)
+if [ -d $CWD/sources/meta-rbz-ml-python ] && [ -d $CWD/sources/meta-python-ai ]; then
+    echo "" >> $BUILD_DIR/conf/bblayers.conf
+    echo "# RBZ ML Python layers" >> $BUILD_DIR/conf/bblayers.conf
+    grep -q "meta-openembedded/meta-python" $BUILD_DIR/conf/bblayers.conf || \
+        echo "BBLAYERS += \"\${BSPDIR}/sources/meta-openembedded/meta-python\"" >> $BUILD_DIR/conf/bblayers.conf
+    echo "BBLAYERS += \"\${BSPDIR}/sources/meta-python-ai\"" >> $BUILD_DIR/conf/bblayers.conf
+    echo "BBLAYERS += \"\${BSPDIR}/sources/meta-rbz-ml-python\"" >> $BUILD_DIR/conf/bblayers.conf
+
+    echo >> conf/local.conf
+    echo "# torchvision depends on ffmpeg" >> conf/local.conf
+    echo "LICENSE_FLAGS_ACCEPTED += \"commercial_ffmpeg\"" >> conf/local.conf
+fi
+
 # NXP development board images are more useful with the empty root password.
 echo -e "\n====================================== Important Note =========================================="
 echo "This setup is optimized for NXP development boards and is not appropriate for production boards."
