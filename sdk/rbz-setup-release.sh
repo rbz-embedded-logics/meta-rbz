@@ -3,7 +3,7 @@
 # i.MX Yocto Project Build Environment Setup Script
 #
 # Copyright (C) 2011-2016 Freescale Semiconductor
-# Copyright 2017 NXP
+# Copyright 2017, 2019-2024 NXP
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -38,6 +38,17 @@ echo "
     * [-b build-dir]: Build directory, if unspecified script uses 'build' as output directory
     * [-h]: help
 "
+echo -e "\n
+    Supported machines: `echo; ls sources/meta-freescale/conf/machine/*.conf \
+	                          sources/meta-imx/meta-imx-bsp/conf/machine/*.conf \
+	                          sources/meta-rbz/conf/machine/*.conf \
+        |egrep "/(imx6|imx7|imx8|imx9|mod_).*conf$" | sed s/\.conf//g | sed -r 's/^.+\///' | xargs -I% echo -e "\t%"`
+
+
+    Supported NXP's i.MX distros: `echo; ls sources/meta-imx/meta-imx-sdk/conf/distro/fsl-*.conf \
+        | sed s/\.conf//g | sed -r 's/^.+\///' | xargs -I% echo -e "\t%"`
+"
+
 }
 
 
@@ -98,20 +109,20 @@ if [ -z "$MACHINE" ]; then
 fi
 
 case $MACHINE in
-imx8*)
-    case $DISTRO in
-    *wayland)
+imx6*|imx7*)
+    : ok
+    ;;
+*)
+    case $FSLDISTRO in
+    *wayland*)
         : ok
         ;;
     *)
-        echo -e "\n ERROR - Only Wayland distros are supported for i.MX 8 or i.MX 8M"
+        echo -e "\n ERROR - Only Wayland distros are supported for $MACHINE"
         echo -e "\n"
         return 1
         ;;
     esac
-    ;;
-*)
-    : ok
     ;;
 esac
 
@@ -119,11 +130,7 @@ esac
 FSL_EULA_FILE=$CWD/sources/meta-imx/LICENSE.txt
 
 # Set up the basic yocto environment
-if [ -z "$DISTRO" ]; then
-   DISTRO=$FSLDISTRO MACHINE=$MACHINE . ./$PROGNAME $BUILD_DIR
-else
-   MACHINE=$MACHINE . ./$PROGNAME $BUILD_DIR
-fi
+DISTRO=$FSLDISTRO MACHINE=$MACHINE . ./$PROGNAME $BUILD_DIR
 
 # Point to the current directory since the last command changed the directory to $BUILD_DIR
 BUILD_DIR=.
@@ -163,35 +170,37 @@ hook_in_layer meta-imx/meta-imx-sdk
 hook_in_layer meta-imx/meta-imx-ml
 hook_in_layer meta-imx/meta-imx-v2x
 hook_in_layer meta-nxp-demo-experience
+hook_in_layer meta-nxp-connectivity/meta-nxp-matter-baseline
+hook_in_layer meta-nxp-connectivity/meta-nxp-openthread
 
 echo "" >> $BUILD_DIR/conf/bblayers.conf
 echo "BBLAYERS += \"\${BSPDIR}/sources/meta-arm/meta-arm\"" >> $BUILD_DIR/conf/bblayers.conf
 echo "BBLAYERS += \"\${BSPDIR}/sources/meta-arm/meta-arm-toolchain\"" >> $BUILD_DIR/conf/bblayers.conf
-echo "BBLAYERS += \"\${BSPDIR}/sources/meta-browser/meta-chromium\"" >> $BUILD_DIR/conf/bblayers.conf
 echo "BBLAYERS += \"\${BSPDIR}/sources/meta-clang\"" >> $BUILD_DIR/conf/bblayers.conf
 echo "BBLAYERS += \"\${BSPDIR}/sources/meta-openembedded/meta-gnome\"" >> $BUILD_DIR/conf/bblayers.conf
 echo "BBLAYERS += \"\${BSPDIR}/sources/meta-openembedded/meta-networking\"" >> $BUILD_DIR/conf/bblayers.conf
 echo "BBLAYERS += \"\${BSPDIR}/sources/meta-openembedded/meta-filesystems\"" >> $BUILD_DIR/conf/bblayers.conf
+echo "BBLAYERS += \"\${BSPDIR}/sources/meta-openembedded/meta-perl\"" >> $BUILD_DIR/conf/bblayers.conf
 echo "BBLAYERS += \"\${BSPDIR}/sources/meta-qt6\"" >> $BUILD_DIR/conf/bblayers.conf
 echo "BBLAYERS += \"\${BSPDIR}/sources/meta-security/meta-parsec\"" >> $BUILD_DIR/conf/bblayers.conf
 echo "BBLAYERS += \"\${BSPDIR}/sources/meta-security/meta-tpm\"" >> $BUILD_DIR/conf/bblayers.conf
 echo "BBLAYERS += \"\${BSPDIR}/sources/meta-virtualization\"" >> $BUILD_DIR/conf/bblayers.conf
+echo "BBLAYERS += \"\${BSPDIR}/sources/meta-freescale-ml\"" >> $BUILD_DIR/conf/bblayers.conf
 
-# Enable RBZ layer
 echo "" >> $BUILD_DIR/conf/bblayers.conf
 echo "# RBZ layer" >> $BUILD_DIR/conf/bblayers.conf
 echo "BBLAYERS += \"\${BSPDIR}/sources/meta-rbz\"" >> $BUILD_DIR/conf/bblayers.conf
 
+# NXP development board images are more useful with the empty root password.
+echo -e "\n====================================== Important Note =========================================="
+echo "This setup is optimized for NXP development boards and is not appropriate for production boards."
+
+bitbake-config-build enable-fragment core/yocto/root-login-with-empty-password
+
+echo -e "================================================================================================\n"
+
 echo BSPDIR=$BSPDIR
 echo BUILD_DIR=$BUILD_DIR
-
-# Support integrating community meta-freescale instead of meta-fsl-arm
-if [ -d ../sources/meta-freescale ]; then
-    echo meta-freescale directory found
-    # Change settings according to environment
-    sed -e "s,meta-fsl-arm\s,meta-freescale ,g" -i conf/bblayers.conf
-    sed -e "s,\$.BSPDIR./sources/meta-fsl-arm-extra\s,,g" -i conf/bblayers.conf
-fi
 
 cd  $BUILD_DIR
 clean_up
