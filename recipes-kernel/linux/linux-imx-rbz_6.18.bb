@@ -1,4 +1,4 @@
-# Adapted from linux-imx_6.18.bb (meta-imx wrynose-6.18.20-2.0.0)
+# Adapted from linux-imx_6.18.bb (meta-imx wrynose-6.18.37-2.1.0)
 
 SUMMARY = "Linux kernel for RBZ modules"
 DESCRIPTION = "Linux Kernel provided and supported by NXP with focus on \
@@ -16,9 +16,9 @@ KERNEL_SRC ?= "git://github.com/rbz-embedded-logics/linux-imx-rbz.git;protocol=h
 SRCBRANCH = "lf-6.18.y"
 KBRANCH = "${SRCBRANCH}"
 # TODO: set RBZ commit
-SRCREV = "3050dcac17a03c98b017042f418bd67a81865654"
+SRCREV = "75c64a19c50ce4085ed4d2d97cae4c020773d7b2"
 
-LINUX_VERSION = "6.18.20"
+LINUX_VERSION = "6.18.37"
 KERNEL_VERSION_SANITY_SKIP = "1"
 LOCALVERSION = "-lts-next"
 
